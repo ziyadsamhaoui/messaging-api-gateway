@@ -129,7 +129,6 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 3
-
 resilience4j:
   circuitbreaker:
     configs:
