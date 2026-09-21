@@ -129,4 +129,47 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 3
-# test
+
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: BadrLink edge API gateway (reactive routing, edge JWT verification, token bucket rate limiting)
+
+badrlink:
+  gateway:
+    security:
+      # Paths served without an access token. Everything else requires a valid JWT.
+      public-paths:
+        - /auth/register
+        - /auth/login
+        - /auth/refresh
+        - /auth/forgot-password
+        - /auth/reset-password
+        - /health
+        - /actuator/health
+        - /actuator/health/**
+        - /fallback
+      internal-path-segment: internal
+      internal-token-header: X-Internal-Token
+      jwt:
+        jwk-set-uri: ${AUTH_JWKS_URI:http://auth-service:8081/oauth2/jwks}
+        issuer: ${AUTH_ISSUER:http://auth-service:8081}
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+      allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+      allowed-headers: Authorization,Content-Type,Accept,X-Requested-With,X-Correlation-Id
+      exposed-headers: X-RateLimit-Remaining,X-RateLimit-Burst-Capacity,X-RateLimit-Replenish-Rate,X-RateLimit-Requested-Tokens,X-Correlation-Id
+      max-age: 3600s
