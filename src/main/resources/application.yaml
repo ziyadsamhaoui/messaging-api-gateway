@@ -15,3 +15,118 @@ spring:
       connect-timeout: 2s
       lettuce:
         shutdown-timeout: 100ms
+  cloud:
+    gateway:
+      server:
+        webflux:
+          fail-on-route-definition-error: true
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 3s
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+            # Retry strictly idempotent reads like: 'methods: GET'
+            # keeps non-idempotent like: 'methods: POST' out of the retry path, and 429 is not retried either.
+            - name: Retry
+              args:
+                retries: 1
+                methods: GET
+                series: SERVER_ERROR
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: backendCircuitBreaker
+                fallbackUri: forward:/fallback
+          routes:
+            # Public auth surface
+            - id: auth-public
+              uri: ${UPSTREAM_AUTH_SERVICE:http://auth-service:8081}
+              predicates:
+                - Path=/auth/register,/auth/login,/auth/forgot-password,/auth/reset-password
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@ipKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
+            - id: auth-refresh
+              uri: ${UPSTREAM_AUTH_SERVICE:http://auth-service:8081}
+              predicates:
+                - Path=/auth/refresh
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@ipKeyResolver}"
+                    redis-rate-limiter.replenishRate: 2
+                    redis-rate-limiter.burstCapacity: 10
+            # Authenticated auth surface
+            - id: auth-authenticated
+              uri: ${UPSTREAM_AUTH_SERVICE:http://auth-service:8081}
+              predicates:
+                - Path=/auth/logout
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 5
+                    redis-rate-limiter.burstCapacity: 10
+            # User service
+            - id: user-service
+              uri: ${UPSTREAM_USER_SERVICE:http://user-service:8082}
+              predicates:
+                - Path=/users/**,/connections/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+            # Chat service: reads first, then message send, then remaining writes
+            - id: chat-service-reads
+              uri: ${UPSTREAM_CHAT_SERVICE:http://chat-service:8083}
+              predicates:
+                - Path=/rooms/**,/invitations/**
+                - Method=GET
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 30
+                    redis-rate-limiter.burstCapacity: 60
+            - id: chat-service-message-send
+              uri: ${UPSTREAM_CHAT_SERVICE:http://chat-service:8083}
+              predicates:
+                - Path=/rooms/*/messages
+                - Method=POST
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+            - id: chat-service-writes
+              uri: ${UPSTREAM_CHAT_SERVICE:http://chat-service:8083}
+              predicates:
+                - Path=/rooms/**,/invitations/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+            # Realtime gateway: WebSocket/STOMP proxy
+            - id: realtime-ws
+              uri: ${UPSTREAM_REALTIME_GATEWAY:ws://realtime-gateway:8084}
+              predicates:
+                - Path=/ws/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 3
+# test
