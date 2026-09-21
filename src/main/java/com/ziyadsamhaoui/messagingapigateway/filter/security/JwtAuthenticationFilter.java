@@ -24,26 +24,12 @@ import com.ziyadsamhaoui.messagingapigateway.exception.GatewayErrorWriter;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Edge-level, fail-fast RS256 verification of the access token.
- *
- * <p>Runs inside the Spring Security chain, immediately before the resource-server authentication
- * filter. When the request carries a token, the signature, {@code exp} and {@code iss} claims are
- * checked against the Auth Service JWKS <em>before</em> any routing, rate limiting or upstream call
- * happens, so a forged or expired token never costs a backend request. Requests without a token are
- * left to the authorization rules, which know which paths are public.
- *
- * <p>On success the request is forwarded with the original {@code Authorization} header untouched:
- * the gateway never mints downstream identity headers, every service re-derives the subject from the
- * token (see ADR-007).
- */
 public class JwtAuthenticationFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    /** WebSocket/SockJS handshakes from browsers cannot set headers, so /ws/** also accepts this query parameter. */
     static final String ACCESS_TOKEN_QUERY_PARAM = "access_token";
 
     static final String WS_PATH_PREFIX = "/ws/";
@@ -69,8 +55,6 @@ public class JwtAuthenticationFilter implements WebFilter {
         }
         String token = resolveToken(request);
         if (token == null) {
-            // No credentials at all: let the authorization filter reject protected paths with the
-            // same canonical body (see SecurityConfig#gatewayAuthenticationEntryPoint).
             return chain.filter(exchange);
         }
         return this.jwtDecoder.decode(token)
@@ -113,10 +97,7 @@ public class JwtAuthenticationFilter implements WebFilter {
         return null;
     }
 
-    /**
-     * A JWKS fetch failure surfaces as a {@link JwtException} as well; report it as a 503 instead of
-     * blaming the caller's token.
-     */
+
     private static boolean isVerifierUnavailable(Throwable throwable) {
         Throwable current = throwable;
         for (int depth = 0; current != null && depth < 8; depth++) {
