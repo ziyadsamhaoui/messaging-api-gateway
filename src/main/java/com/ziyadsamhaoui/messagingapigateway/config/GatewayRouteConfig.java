@@ -14,13 +14,7 @@ import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Guards the YAML route table at startup.
- *
- * <p>Spring Cloud Gateway already refuses to start on a syntactically invalid route, but it happily
- * accepts a route that is missing its rate limiter or that exposes an internal path. Both are edge
- * misconfigurations that would only be noticed in production, so they fail the boot instead.
- */
+
 @Configuration
 public class GatewayRouteConfig {
 
@@ -67,7 +61,7 @@ public class GatewayRouteConfig {
             violations.add("route '" + route.getId() + "' declares " + RATE_LIMITER_FILTER + " more than once");
         }
         else {
-            String keyResolver = rateLimiters.getFirst().getArgs().get(KEY_RESOLVER_ARG);
+            String keyResolver = rateLimiters.get(0).getArgs().get(KEY_RESOLVER_ARG);
             if (keyResolver == null || !keyResolver.startsWith(BEAN_REFERENCE_PREFIX)) {
                 violations.add("route '" + route.getId() + "' must reference a key resolver bean, e.g. "
                         + BEAN_REFERENCE_PREFIX + "userKeyResolver}");
