@@ -1,3 +1,17 @@
+server:
+  port: 8080
+  netty:
+    connection-timeout: 3s
+
 spring:
   application:
     name: messaging-api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      timeout: 2s
+      connect-timeout: 2s
+      lettuce:
+        shutdown-timeout: 100ms

@@ -17,6 +17,7 @@ target/
 *.iws
 *.iml
 *.ipr
+*.junie
 .env
 
 ### NetBeans ###
@@ -31,7 +32,4 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### Temporary files ###
-/src/
 
