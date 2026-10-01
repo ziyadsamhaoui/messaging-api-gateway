@@ -570,23 +570,6 @@ src/
         └── com/ziyadsamhaoui/messagingapigateway/
 ```
 
-### Main Components
-
-| Component                   | Responsibility                                         |
-| --------------------------- | ------------------------------------------------------ |
-| `GatewayRouteConfig`        | Validates the route configuration at startup           |
-| `SecurityConfig`            | Configures token authentication and security rules     |
-| `JwtAuthenticationFilter`   | Quickly rejects invalid tokens                         |
-| `InternalPathBlockFilter`   | Blocks internal paths                                  |
-| `InternalHeaderStripFilter` | Removes client-supplied internal credentials           |
-| `GlobalLoggingFilter`       | Handles correlation IDs and request logging            |
-| `RateLimiterConfig`         | Configures Redis-based rate limiting                   |
-| `CorsConfig`                | Handles browser CORS requests                          |
-| `GatewayExceptionHandler`   | Converts gateway failures into the common error format |
-| `FallbackController`        | Returns the circuit-breaker fallback response          |
-| `HealthController`          | Provides the public gateway health endpoint            |
-
----
 
 ## Observability
 
@@ -683,30 +666,15 @@ The gateway does not handle these WebSocket business rules itself.
 
 ---
 
-## Current Limitations
-
-The following items are intentionally outside the current scope or still planned:
-
-* JWT audience validation is not enabled yet. It will be added once the Auth Service defines the required audiences.
-* Distributed tracing is not configured yet. Correlation IDs are available, but no tracing platform is connected.
-* Full WebSocket/STOMP end-to-end testing depends on the Realtime Gateway being available.
-* Redis currently uses a single configured instance. Redis Sentinel or Cluster can be introduced for production high availability.
-* The gateway does not manage internal service authentication. Internal services communicate directly through the private network.
-* Retry behavior is intentionally limited to `GET` requests and is not applied to write operations.
-* The gateway does not contain business authorization logic; backend services remain responsible for checking access to their resources.
-
----
-
 ## Related Services
 
 ```text
 BadrLink
 │
-├── API Gateway       :8080
-├── Auth Service      :8081
-├── User Service      :8082
-├── Chat Service      :8083
-└── Realtime Gateway  :8084
+├── API Gateway           :8080
+├── Auth Service          :8081
+├── User Service          :8082
+├── Chat Service          :8083
+├── Notification Service  :8084
+└── Realtime Gateway      :8084
 ```
-
-The API Gateway is the public entry point for the HTTP and WebSocket APIs while the services behind it remain isolated from direct client access.
