@@ -64,6 +64,11 @@ class JwtEdgeAuthFilterTest extends AbstractGatewayIntegrationTest {
     }
 
     @Test
+    void tokenWithAnUnexpectedAudienceIsRejected() {
+        assertRejected(JwtTestTokens.tokenWithWrongAudience("wrong-audience-user"));
+    }
+
+    @Test
     void protectedRouteWithoutTokenIsUnauthenticatedAndNeverReachesABackend() {
         this.client.get()
                 .uri(PROTECTED_PATH)

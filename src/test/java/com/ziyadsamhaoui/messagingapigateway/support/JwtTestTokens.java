@@ -22,9 +22,14 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 public final class JwtTestTokens {
 
     /** Must match {@code badrlink.gateway.security.jwt.issuer}. */
-    public static final String ISSUER = "http://auth-service:8081";
+    public static final String ISSUER = "http://messaging-auth-service:8081";
 
     public static final String JWKS_PATH = "/oauth2/jwks";
+
+    /** Must match {@code badrlink.gateway.security.jwt.audience}. */
+    public static final String AUDIENCE = "messaging-api";
+
+    private static final String WRONG_AUDIENCE = "some-other-api";
 
     private static final String KEY_ID = "badrlink-test-key";
 
@@ -52,7 +57,8 @@ public final class JwtTestTokens {
     public static String validToken(String subject) {
         Instant now = Instant.now();
         return SIGNING_ENCODER.encode(JwtEncoderParameters.from(
-                claims(subject, ISSUER, now.minusSeconds(5), now.plus(Duration.ofMinutes(5))))).getTokenValue();
+                claims(subject, AUDIENCE, ISSUER, now.minusSeconds(5), now.plus(Duration.ofMinutes(5)))))
+                .getTokenValue();
     }
 
     /** Expired well beyond the allowed clock skew. */
@@ -60,13 +66,20 @@ public final class JwtTestTokens {
         Instant now = Instant.now();
         Instant expiresAt = now.minus(CLOCK_SKEW).minusSeconds(30);
         return SIGNING_ENCODER.encode(JwtEncoderParameters.from(
-                claims(subject, ISSUER, now.minus(Duration.ofMinutes(10)), expiresAt))).getTokenValue();
+                claims(subject, AUDIENCE, ISSUER, now.minus(Duration.ofMinutes(10)), expiresAt))).getTokenValue();
     }
 
     public static String tokenWithWrongIssuer(String subject) {
         Instant now = Instant.now();
         return SIGNING_ENCODER.encode(JwtEncoderParameters.from(
-                claims(subject, "http://evil.example.com", now.minusSeconds(5), now.plus(Duration.ofMinutes(5)))))
+                claims(subject, AUDIENCE, "http://evil.example.com", now.minusSeconds(5), now.plus(Duration.ofMinutes(5)))))
+                .getTokenValue();
+    }
+
+    public static String tokenWithWrongAudience(String subject) {
+        Instant now = Instant.now();
+        return SIGNING_ENCODER.encode(JwtEncoderParameters.from(
+                claims(subject, WRONG_AUDIENCE, ISSUER, now.minusSeconds(5), now.plus(Duration.ofMinutes(5)))))
                 .getTokenValue();
     }
 
@@ -74,7 +87,8 @@ public final class JwtTestTokens {
     public static String tokenSignedByUnknownKey(String subject) {
         Instant now = Instant.now();
         return UNKNOWN_KEY_ENCODER.encode(JwtEncoderParameters.from(
-                claims(subject, ISSUER, now.minusSeconds(5), now.plus(Duration.ofMinutes(5))))).getTokenValue();
+                claims(subject, AUDIENCE, ISSUER, now.minusSeconds(5), now.plus(Duration.ofMinutes(5)))))
+                .getTokenValue();
     }
 
     /** Structurally invalid: not even three dot-separated segments. */
@@ -82,10 +96,12 @@ public final class JwtTestTokens {
         return "not-a-json-web-token";
     }
 
-    private static JwtClaimsSet claims(String subject, String issuer, Instant issuedAt, Instant expiresAt) {
+    private static JwtClaimsSet claims(String subject, String audience, String issuer, Instant issuedAt,
+            Instant expiresAt) {
         return JwtClaimsSet.builder()
                 .issuer(issuer)
                 .subject(subject)
+                .audience(java.util.List.of(audience))
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
                 .claim("scope", "openid")
