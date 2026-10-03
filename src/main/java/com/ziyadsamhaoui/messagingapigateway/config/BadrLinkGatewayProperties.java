@@ -22,7 +22,7 @@ public record BadrLinkGatewayProperties(@Valid Security security, @Valid Cors co
             @Valid Jwt jwt) {
     }
 
-    public record Jwt(@NotBlank String jwkSetUri, @NotBlank String issuer) {
+    public record Jwt(@NotBlank String jwkSetUri, @NotBlank String issuer, @NotBlank String audience) {
     }
 
     public record Cors(

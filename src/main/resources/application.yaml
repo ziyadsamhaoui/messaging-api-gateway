@@ -2,7 +2,6 @@ server:
   port: 8080
   netty:
     connection-timeout: 3s
-
 spring:
   application:
     name: messaging-api-gateway
@@ -44,7 +43,7 @@ spring:
           routes:
             # Public auth surface
             - id: auth-public
-              uri: ${UPSTREAM_AUTH_SERVICE:http://auth-service:8081}
+              uri: ${UPSTREAM_AUTH_SERVICE:http://messaging-auth-service:8081}
               predicates:
                 - Path=/auth/register,/auth/login,/auth/forgot-password,/auth/reset-password
               filters:
@@ -54,7 +53,7 @@ spring:
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 5
             - id: auth-refresh
-              uri: ${UPSTREAM_AUTH_SERVICE:http://auth-service:8081}
+              uri: ${UPSTREAM_AUTH_SERVICE:http://messaging-auth-service:8081}
               predicates:
                 - Path=/auth/refresh
               filters:
@@ -65,7 +64,7 @@ spring:
                     redis-rate-limiter.burstCapacity: 10
             # Authenticated auth surface
             - id: auth-authenticated
-              uri: ${UPSTREAM_AUTH_SERVICE:http://auth-service:8081}
+              uri: ${UPSTREAM_AUTH_SERVICE:http://messaging-auth-service:8081}
               predicates:
                 - Path=/auth/logout
               filters:
@@ -184,8 +183,9 @@ badrlink:
       internal-path-segment: internal
       internal-token-header: X-Internal-Token
       jwt:
-        jwk-set-uri: ${AUTH_JWKS_URI:http://auth-service:8081/oauth2/jwks}
-        issuer: ${AUTH_ISSUER:http://auth-service:8081}
+        jwk-set-uri: ${AUTH_JWKS_URI:http://messaging-auth-service:8081/oauth2/jwks}
+        issuer: ${AUTH_ISSUER:http://messaging-auth-service:8081}
+        audience: ${AUTH_AUDIENCE:messaging-api}
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
       allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS

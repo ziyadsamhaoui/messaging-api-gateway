@@ -9,12 +9,6 @@ import com.ziyadsamhaoui.messagingapigateway.dto.HealthStatus;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Liveness probe for load balancers and Kubernetes, deliberately outside the authenticated surface
- * (nothing here is sensitive) so that a probe never needs a token.
- *
- * <p>Readiness of dependencies (Redis, upstreams) is reported by {@code /actuator/health}.
- */
 @RestController
 public class HealthController {
 
