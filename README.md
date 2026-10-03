@@ -81,6 +81,8 @@ The API Gateway sits between clients and every public BadrLink service.
 
 The gateway does not contain business data and does not own any user, authentication, or chat entities.
 
+Centralized references: [`/docs/API_ENDPOINTS.md`](../docs/API_ENDPOINTS.md), [`/docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`/docs/INCOHERENCES_AND_RESOLUTIONS.md`](../docs/INCOHERENCES_AND_RESOLUTIONS.md).
+
 ---
 
 ## Request Flow
@@ -186,9 +188,12 @@ The gateway checks:
 * Token signature
 * Token expiration
 * Token issuer
-* Supported signing method
+* Supported signing method (RS256)
+* Token audience (`aud` must contain `AUTH_AUDIENCE`, default `messaging-api`)
 
 The original `Authorization` header is then forwarded to the backend service.
+
+Tokens are verified against Auth's public keys at `AUTH_JWKS_URI` (`/oauth2/jwks`). `AUTH_ISSUER` must equal Auth's `JWT_ISSUER`. See `docs/adr/0010-rs256-access-token-signing.md` and `0011-canonical-jwks-path.md`.
 
 Backend services **verify the token again**. The gateway does not replace the token with custom identity headers.
 
@@ -215,6 +220,8 @@ After the WebSocket connection reaches the Realtime Gateway, the client is authe
 ## Internal Endpoint Protection
 
 Internal service endpoints are never exposed through the public gateway.
+
+Two layers cooperate here (see `/docs/INCOHERENCES_AND_RESOLUTIONS.md` INC-08): the security chain permits `/internal/**` so the request reaches the dedicated block filter, and `InternalPathBlockFilter` unconditionally answers `404` after token verification — the `permitAll` is only safe because the block filter always runs first. The two are a pair; do not remove one without the other.
 
 Any request containing an `internal` path segment is blocked:
 
@@ -448,12 +455,13 @@ Environment-specific values are configured through environment variables.
 | `REDIS_HOST`                | `localhost`                            | Redis host              |
 | `REDIS_PORT`                | `6379`                                 | Redis port              |
 | `REDIS_PASSWORD`            | empty                                  | Redis password          |
-| `UPSTREAM_AUTH_SERVICE`     | `http://auth-service:8081`             | Auth Service            |
+| `UPSTREAM_AUTH_SERVICE`     | `http://messaging-auth-service:8081`   | Auth Service            |
 | `UPSTREAM_USER_SERVICE`     | `http://user-service:8082`             | User Service            |
 | `UPSTREAM_CHAT_SERVICE`     | `http://chat-service:8083`             | Chat Service            |
 | `UPSTREAM_REALTIME_GATEWAY` | `ws://realtime-gateway:8084`           | Realtime Gateway        |
-| `AUTH_JWKS_URI`             | `http://auth-service:8081/oauth2/jwks` | Token verification keys |
-| `AUTH_ISSUER`               | `http://auth-service:8081`             | Expected token issuer   |
+| `AUTH_JWKS_URI`             | `http://messaging-auth-service:8081/oauth2/jwks` | Auth JWKS endpoint for RS256 verification |
+| `AUTH_ISSUER`               | `http://messaging-auth-service:8081`   | Expected token issuer; must equal Auth's `JWT_ISSUER` |
+| `AUTH_AUDIENCE`             | `messaging-api`                        | Expected `aud` claim; must equal Auth's `JWT_AUDIENCE` |
 | `CORS_ALLOWED_ORIGINS`      | `http://localhost:3000`                | Allowed browser origins |
 
 Use `.env.example` as the template for local configuration.
@@ -706,7 +714,11 @@ BadrLink
 ├── Auth Service      :8081
 ├── User Service      :8082
 ├── Chat Service      :8083
-└── Realtime Gateway  :8084
+├── Realtime Gateway  :8084
+└── Notification      :8085
 ```
 
 The API Gateway is the public entry point for the HTTP and WebSocket APIs while the services behind it remain isolated from direct client access.
+
+> **Note:** The Notification service (Sprint 7) is not yet routed through the
+gateway; the `/notifications/**` route is added when the notification UI lands.
