@@ -128,6 +128,17 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 3
+            # Notification service
+            - id: notification-service
+              uri: ${UPSTREAM_NOTIFICATION_SERVICE:http://messaging-notification-service:8085}
+              predicates:
+                - Path=/notifications/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
 resilience4j:
   circuitbreaker:
     configs:

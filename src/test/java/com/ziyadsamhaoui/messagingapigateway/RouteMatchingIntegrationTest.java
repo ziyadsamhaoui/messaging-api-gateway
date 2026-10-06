@@ -15,10 +15,7 @@ import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 import com.ziyadsamhaoui.messagingapigateway.support.AbstractGatewayIntegrationTest;
 import com.ziyadsamhaoui.messagingapigateway.support.JwtTestTokens;
 
-/**
- * Verifies that every path in the documented routing matrix reaches the intended upstream, and that
- * the two WebSocket/realtime contracts are expressed in the route table.
- */
+
 class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
 
     @Autowired
@@ -28,7 +25,8 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
     void routeTableContainsExactlyTheDocumentedRoutes() {
         assertThat(routes()).extracting(RouteDefinition::getId)
                 .containsExactly("auth-public", "auth-refresh", "auth-authenticated", "user-service",
-                        "chat-service-reads", "chat-service-message-send", "chat-service-writes", "realtime-ws");
+                        "chat-service-reads", "chat-service-message-send", "chat-service-writes", "realtime-ws",
+                        "notification-service");
     }
 
     @Test
@@ -78,6 +76,28 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
         assertThat(CHAT_UPSTREAM.drainRequests()).extracting(RecordedRequest::getPath)
                 .containsExactly("/rooms/42", "/rooms/42/messages");
         assertThat(AUTH_UPSTREAM.drainRequests()).isEmpty();
+    }
+
+    @Test
+    void notificationPathsReachTheNotificationService() {
+        String token = JwtTestTokens.validToken("route-matching-notifications");
+
+        this.client.get().uri("/notifications").header(AUTHORIZATION, bearer(token)).exchange()
+                .expectStatus().isOk();
+        this.client.get().uri("/notifications/unread-count").header(AUTHORIZATION, bearer(token)).exchange()
+                .expectStatus().isOk();
+
+        assertThat(NOTIFICATION_UPSTREAM.drainRequests()).extracting(RecordedRequest::getPath)
+                .containsExactly("/notifications", "/notifications/unread-count");
+        assertThat(USER_UPSTREAM.drainRequests()).isEmpty();
+        assertThat(CHAT_UPSTREAM.drainRequests()).isEmpty();
+        assertThat(AUTH_UPSTREAM.drainRequests()).isEmpty();
+    }
+
+    @Test
+    void notificationsRequireAuthentication() {
+        this.client.get().uri("/notifications/unread-count").exchange().expectStatus().isUnauthorized();
+        assertThat(NOTIFICATION_UPSTREAM.drainRequests()).isEmpty();
     }
 
     private List<RouteDefinition> routes() {
