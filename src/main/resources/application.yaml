@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: messaging-api-gateway
+  config:
+    import: "optional:file:.env[.properties]"
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -36,10 +38,11 @@ spring:
                   maxBackoff: 500ms
                   factor: 2
                   basedOnPreviousValue: false
-            - name: CircuitBreaker
-              args:
-                name: backendCircuitBreaker
-                fallbackUri: forward:/fallback
+          # CircuitBreaker is deliberately attached per request/response route below instead of as a
+          # default filter. A WebSocket/SockJS connection commits its response during the handshake,
+          # and the generic 'forward:/fallback' resets the status on a response that cannot be rewritten
+          # (UnsupportedOperationException). The realtime-ws route therefore opts out of it; a dead
+          # realtime upstream still surfaces as the canonical 503 from GatewayExceptionHandler.
           routes:
             # Public auth surface
             - id: auth-public
@@ -52,6 +55,10 @@ spring:
                     key-resolver: "#{@ipKeyResolver}"
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 5
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             - id: auth-refresh
               uri: ${UPSTREAM_AUTH_SERVICE:http://localhost:8081}
               predicates:
@@ -62,6 +69,10 @@ spring:
                     key-resolver: "#{@ipKeyResolver}"
                     redis-rate-limiter.replenishRate: 2
                     redis-rate-limiter.burstCapacity: 10
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             # Authenticated auth surface
             - id: auth-authenticated
               uri: ${UPSTREAM_AUTH_SERVICE:http://localhost:8081}
@@ -73,6 +84,10 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 5
                     redis-rate-limiter.burstCapacity: 10
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             # User service
             - id: user-service
               uri: ${UPSTREAM_USER_SERVICE:http://localhost:8082}
@@ -84,6 +99,10 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 20
                     redis-rate-limiter.burstCapacity: 40
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             # Chat service: reads first, then message send, then remaining writes
             - id: chat-service-reads
               uri: ${UPSTREAM_CHAT_SERVICE:http://localhost:8083}
@@ -96,6 +115,10 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 30
                     redis-rate-limiter.burstCapacity: 60
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             - id: chat-service-message-send
               uri: ${UPSTREAM_CHAT_SERVICE:http://localhost:8083}
               predicates:
@@ -107,6 +130,10 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 10
                     redis-rate-limiter.burstCapacity: 20
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             - id: chat-service-writes
               uri: ${UPSTREAM_CHAT_SERVICE:http://localhost:8083}
               predicates:
@@ -117,9 +144,12 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 20
                     redis-rate-limiter.burstCapacity: 40
-            # Realtime gateway: WebSocket/STOMP proxy
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             - id: realtime-ws
-              uri: ${UPSTREAM_REALTIME_GATEWAY:ws://localhost:8084}
+              uri: ${UPSTREAM_REALTIME_GATEWAY:http://localhost:8084}
               predicates:
                 - Path=/ws/**
               filters:
@@ -139,6 +169,10 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 20
                     redis-rate-limiter.burstCapacity: 40
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
 resilience4j:
   circuitbreaker:
     configs:

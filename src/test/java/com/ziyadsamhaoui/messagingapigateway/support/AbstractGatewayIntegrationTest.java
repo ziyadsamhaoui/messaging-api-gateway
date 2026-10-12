@@ -23,6 +23,8 @@ public abstract class AbstractGatewayIntegrationTest {
 
     protected static final UpstreamStub NOTIFICATION_UPSTREAM = UpstreamStub.start("notification-service");
 
+    protected static final UpstreamStub REALTIME_UPSTREAM = UpstreamStub.start("realtime-gateway");
+
     static {
         // The Auth Service publishes the JWKS document the gateway verifies signatures against.
         AUTH_UPSTREAM.onRoute(JwtTestTokens.JWKS_PATH,
@@ -44,6 +46,7 @@ public abstract class AbstractGatewayIntegrationTest {
         registry.add("UPSTREAM_USER_SERVICE", USER_UPSTREAM::baseUrl);
         registry.add("UPSTREAM_CHAT_SERVICE", CHAT_UPSTREAM::baseUrl);
         registry.add("UPSTREAM_NOTIFICATION_SERVICE", NOTIFICATION_UPSTREAM::baseUrl);
+        registry.add("UPSTREAM_REALTIME_GATEWAY", REALTIME_UPSTREAM::baseUrl);
         registry.add("AUTH_JWKS_URI", () -> AUTH_UPSTREAM.url(JwtTestTokens.JWKS_PATH));
         registry.add("AUTH_ISSUER", () -> JwtTestTokens.ISSUER);
     }
@@ -58,10 +61,12 @@ public abstract class AbstractGatewayIntegrationTest {
         USER_UPSTREAM.reset();
         CHAT_UPSTREAM.reset();
         NOTIFICATION_UPSTREAM.reset();
+        REALTIME_UPSTREAM.reset();
         AUTH_UPSTREAM.respondOk();
         USER_UPSTREAM.respondOk();
         CHAT_UPSTREAM.respondOk();
         NOTIFICATION_UPSTREAM.respondOk();
+        REALTIME_UPSTREAM.respondOk();
         warmUpJwks();
     }
 
@@ -76,6 +81,7 @@ public abstract class AbstractGatewayIntegrationTest {
         USER_UPSTREAM.reset();
         CHAT_UPSTREAM.reset();
         NOTIFICATION_UPSTREAM.reset();
+        REALTIME_UPSTREAM.reset();
     }
 
     protected static String bearer(String token) {

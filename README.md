@@ -458,7 +458,7 @@ Environment-specific values are configured through environment variables.
 | `UPSTREAM_AUTH_SERVICE`     | `http://messaging-auth-service:8081`   | Auth Service            |
 | `UPSTREAM_USER_SERVICE`     | `http://user-service:8082`             | User Service            |
 | `UPSTREAM_CHAT_SERVICE`     | `http://chat-service:8083`             | Chat Service            |
-| `UPSTREAM_REALTIME_GATEWAY` | `ws://realtime-gateway:8084`           | Realtime Gateway        |
+| `UPSTREAM_REALTIME_GATEWAY` | `http://realtime-gateway:8084`         | Realtime Gateway        |
 | `AUTH_JWKS_URI`             | `http://messaging-auth-service:8081/oauth2/jwks` | Auth JWKS endpoint for RS256 verification |
 | `AUTH_ISSUER`               | `http://messaging-auth-service:8081`   | Expected token issuer; must equal Auth's `JWT_ISSUER` |
 | `AUTH_AUDIENCE`             | `messaging-api`                        | Expected `aud` claim; must equal Auth's `JWT_AUDIENCE` |

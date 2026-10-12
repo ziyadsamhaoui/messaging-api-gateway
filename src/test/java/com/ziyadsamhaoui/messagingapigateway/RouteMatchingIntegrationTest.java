@@ -6,6 +6,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import java.util.List;
 
 import okhttp3.mockwebserver.RecordedRequest;
+import org.springframework.cloud.gateway.filter.FilterDefinition;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,16 +32,36 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
 
     @Test
     void realtimeRouteProxiesTheWebSocketPathToTheRealtimeGateway() {
-        RouteDefinition realtime = routes().stream()
-                .filter(route -> "realtime-ws".equals(route.getId()))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("realtime-ws route is missing"));
+        RouteDefinition realtime = realtimeRoute();
 
-        assertThat(realtime.getUri().getScheme()).isEqualTo("ws");
-        assertThat(realtime.getUri().getPort()).isEqualTo(8084);
+        // http(s), not ws(s): Spring Cloud Gateway upgrades the forwarded URL itself when the inbound
+        // request is a WebSocket handshake, while a ws:// URI sends the plain SockJS /info and /xhr
+        // requests into the WebSocket handshake handler (rejected -> generic fallback -> 503).
+        assertThat(realtime.getUri().getScheme()).isEqualTo("http");
+        assertThat(realtime.getUri().toString()).isEqualTo(REALTIME_UPSTREAM.baseUrl());
         assertThat(realtime.getPredicates())
                 .singleElement()
                 .satisfies(predicate -> assertThat(predicate.getArgs().values()).contains("/ws/**"));
+    }
+
+    @Test
+    void onlyRequestResponseRoutesCarryTheCircuitBreaker() {
+        List<RouteDefinition> allRoutes = routes();
+
+        // The realtime route is a long-lived socket: its handshake commits the response, which the
+        // generic forward:/fallback cannot rewrite, so it must not go through the circuit breaker.
+        assertThat(filterNames(realtimeRoute())).containsExactly("RequestRateLimiter");
+
+        assertThat(allRoutes)
+                .filteredOn(route -> !"realtime-ws".equals(route.getId()))
+                .allSatisfy(route -> {
+                    assertThat(filterNames(route)).contains("RequestRateLimiter", "CircuitBreaker");
+                    FilterDefinition circuitBreaker = route.getFilters().stream()
+                            .filter(filter -> "CircuitBreaker".equals(filter.getName()))
+                            .findFirst()
+                            .orElseThrow();
+                    assertThat(circuitBreaker.getArgs()).containsEntry("fallbackUri", "forward:/fallback");
+                });
     }
 
     @Test
@@ -102,5 +123,16 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
 
     private List<RouteDefinition> routes() {
         return this.routeDefinitionLocator.getRouteDefinitions().collectList().block();
+    }
+
+    private RouteDefinition realtimeRoute() {
+        return routes().stream()
+                .filter(route -> "realtime-ws".equals(route.getId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("realtime-ws route is missing"));
+    }
+
+    private static List<String> filterNames(RouteDefinition route) {
+        return route.getFilters().stream().map(FilterDefinition::getName).toList();
     }
 }
