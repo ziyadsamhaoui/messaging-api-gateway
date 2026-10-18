@@ -148,6 +148,20 @@ spring:
                   args:
                     name: backendCircuitBreaker
                     fallbackUri: forward:/fallback
+            - id: attachment-service
+              uri: ${UPSTREAM_ATTACHMENT_SERVICE:http://localhost:8086}
+              predicates:
+                - Path=/attachments/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@userKeyResolver}"
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                - name: CircuitBreaker
+                  args:
+                    name: backendCircuitBreaker
+                    fallbackUri: forward:/fallback
             - id: realtime-ws
               uri: ${UPSTREAM_REALTIME_GATEWAY:http://localhost:8084}
               predicates:
