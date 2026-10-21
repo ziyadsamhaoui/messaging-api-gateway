@@ -14,10 +14,6 @@ import com.ziyadsamhaoui.messagingapigateway.filter.global.GlobalLoggingFilter;
 import com.ziyadsamhaoui.messagingapigateway.support.AbstractGatewayIntegrationTest;
 import com.ziyadsamhaoui.messagingapigateway.support.JwtTestTokens;
 
-/**
- * A client must never be able to hand a downstream service the service-to-service credential
- * ({@code X-Internal-Token}) — the gateway strips it from every inbound request (ADR-008).
- */
 class HeaderStrippingTest extends AbstractGatewayIntegrationTest {
 
     private static final String INTERNAL_TOKEN_HEADER = "X-Internal-Token";
@@ -50,7 +46,6 @@ class HeaderStrippingTest extends AbstractGatewayIntegrationTest {
 
         RecordedRequest forwarded = USER_UPSTREAM.awaitRequest(Duration.ofSeconds(5));
         assertThat(forwarded.getPath()).isEqualTo("/users/me");
-        // The credential is gone, and the gateway does not substitute one of its own either.
         assertThat(forwarded.getHeader(INTERNAL_TOKEN_HEADER)).isNull();
         assertThat(forwarded.getHeaders().toMultimap()).doesNotContainKey(INTERNAL_TOKEN_HEADER.toLowerCase());
     }

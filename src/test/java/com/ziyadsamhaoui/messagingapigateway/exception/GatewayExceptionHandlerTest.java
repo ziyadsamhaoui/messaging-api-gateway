@@ -16,10 +16,6 @@ import reactor.test.StepVerifier;
 
 import tools.jackson.databind.json.JsonMapper;
 
-/**
- * Unit coverage for the failure paths that are hard to provoke over HTTP (a dead upstream, a Redis
- * outage) and for the promise that internal details never leave the edge.
- */
 class GatewayExceptionHandlerTest {
 
     private final GatewayExceptionHandler handler = new GatewayExceptionHandler(
@@ -35,7 +31,6 @@ class GatewayExceptionHandlerTest {
                 .contains("\"status\":503")
                 .contains("\"path\":\"/users/me\"")
                 .contains("\"message\":\"Upstream service is unavailable\"")
-                // The transport detail is logged, never returned to the client.
                 .doesNotContain("Connection refused");
     }
 

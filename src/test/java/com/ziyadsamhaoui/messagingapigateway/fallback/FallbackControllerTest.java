@@ -13,10 +13,6 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 
 import com.ziyadsamhaoui.messagingapigateway.dto.ErrorResponse;
 
-/**
- * When a circuit is open (or an upstream times out) the client must receive a truthful 503 carrying the
- * path it actually asked for — not the internal {@code /fallback} forward.
- */
 class FallbackControllerTest {
 
     private final FallbackController controller = new FallbackController();

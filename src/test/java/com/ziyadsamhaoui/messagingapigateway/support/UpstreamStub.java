@@ -17,13 +17,6 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
-/**
- * Stands in for a downstream BadrLink service: every request it receives is recorded so tests can
- * assert exactly what the gateway forwarded (path, headers, body) and how many calls reached the
- * backend.
- *
- * <p>Fixed routes (for example the Auth Service JWKS document) survive {@link #respondWith} overrides.
- */
 public final class UpstreamStub {
 
     private final String name;
@@ -64,7 +57,6 @@ public final class UpstreamStub {
         return stub;
     }
 
-    /** @return base URL without a trailing slash, so it can be used verbatim as a route {@code uri} */
     public String baseUrl() {
         return "http://" + this.server.getHostName() + ":" + this.server.getPort();
     }

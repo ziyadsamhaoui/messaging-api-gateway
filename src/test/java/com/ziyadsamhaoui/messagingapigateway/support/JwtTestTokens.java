@@ -15,18 +15,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
-/**
- * Mints the RS256 access tokens the Auth Service would issue, together with the JWKS document served by
- * the auth upstream stub. Only the public key ever leaves this class.
- */
 public final class JwtTestTokens {
 
-    /** Must match {@code badrlink.gateway.security.jwt.issuer}. */
     public static final String ISSUER = "http://messaging-auth-service:8081";
 
     public static final String JWKS_PATH = "/oauth2/jwks";
 
-    /** Must match {@code badrlink.gateway.security.jwt.audience}. */
     public static final String AUDIENCE = "messaging-api";
 
     private static final String WRONG_AUDIENCE = "some-other-api";
@@ -35,7 +29,6 @@ public final class JwtTestTokens {
 
     private static final String UNKNOWN_KEY_ID = "key-not-published-in-the-jwks";
 
-    /** Spring Security tolerates 60s of clock skew, so an expired token must be older than that. */
     private static final Duration CLOCK_SKEW = Duration.ofSeconds(60);
 
     private static final RSAKey SIGNING_KEY = generateKey(KEY_ID);
@@ -49,7 +42,6 @@ public final class JwtTestTokens {
     private JwtTestTokens() {
     }
 
-    /** The JWKS document the gateway fetches to verify signatures. */
     public static String jwksJson() {
         return new JWKSet(SIGNING_KEY.toPublicJWK()).toString();
     }
@@ -61,7 +53,6 @@ public final class JwtTestTokens {
                 .getTokenValue();
     }
 
-    /** Expired well beyond the allowed clock skew. */
     public static String expiredToken(String subject) {
         Instant now = Instant.now();
         Instant expiresAt = now.minus(CLOCK_SKEW).minusSeconds(30);
@@ -83,7 +74,6 @@ public final class JwtTestTokens {
                 .getTokenValue();
     }
 
-    /** Valid claims, but signed with a key that is absent from the JWKS document. */
     public static String tokenSignedByUnknownKey(String subject) {
         Instant now = Instant.now();
         return UNKNOWN_KEY_ENCODER.encode(JwtEncoderParameters.from(
@@ -91,7 +81,6 @@ public final class JwtTestTokens {
                 .getTokenValue();
     }
 
-    /** Structurally invalid: not even three dot-separated segments. */
     public static String malformedToken() {
         return "not-a-json-web-token";
     }

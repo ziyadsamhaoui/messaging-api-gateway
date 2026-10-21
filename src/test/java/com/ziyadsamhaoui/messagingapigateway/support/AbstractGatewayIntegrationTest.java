@@ -26,7 +26,6 @@ public abstract class AbstractGatewayIntegrationTest {
     protected static final UpstreamStub REALTIME_UPSTREAM = UpstreamStub.start("realtime-gateway");
 
     static {
-        // The Auth Service publishes the JWKS document the gateway verifies signatures against.
         AUTH_UPSTREAM.onRoute(JwtTestTokens.JWKS_PATH,
                 request -> UpstreamStub.jsonResponse(200, JwtTestTokens.jwksJson()));
     }

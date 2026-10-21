@@ -13,15 +13,10 @@ import org.springframework.http.HttpHeaders;
 import com.ziyadsamhaoui.messagingapigateway.support.AbstractGatewayIntegrationTest;
 import com.ziyadsamhaoui.messagingapigateway.support.JwtTestTokens;
 
-/**
- * Edge token verification: only a correctly signed, unexpired token from the trusted issuer may reach a
- * backend, and the token is forwarded untouched — the gateway injects no identity headers of its own.
- */
 class JwtEdgeAuthFilterTest extends AbstractGatewayIntegrationTest {
 
     private static final String PROTECTED_PATH = "/users/me";
 
-    /** Public, authenticated routes share a rate-limit bucket, so use a distinct one here. */
     private static final String PUBLIC_PATH = "/auth/refresh";
 
     @Test
@@ -37,7 +32,6 @@ class JwtEdgeAuthFilterTest extends AbstractGatewayIntegrationTest {
 
         RecordedRequest forwarded = USER_UPSTREAM.awaitRequest(Duration.ofSeconds(5));
         assertThat(forwarded.getHeader(HttpHeaders.AUTHORIZATION)).isEqualTo(bearer(token));
-        // No downstream identity headers: every service derives the subject from the token itself.
         assertThat(forwarded.getHeader("X-User-Id")).isNull();
         assertThat(forwarded.getHeader("X-User-Sub")).isNull();
         assertThat(forwarded.getHeader("X-Authenticated-User")).isNull();

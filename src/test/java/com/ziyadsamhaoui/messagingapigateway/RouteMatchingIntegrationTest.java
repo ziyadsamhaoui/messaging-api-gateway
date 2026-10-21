@@ -34,9 +34,6 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
     void realtimeRouteProxiesTheWebSocketPathToTheRealtimeGateway() {
         RouteDefinition realtime = realtimeRoute();
 
-        // http(s), not ws(s): Spring Cloud Gateway upgrades the forwarded URL itself when the inbound
-        // request is a WebSocket handshake, while a ws:// URI sends the plain SockJS /info and /xhr
-        // requests into the WebSocket handshake handler (rejected -> generic fallback -> 503).
         assertThat(realtime.getUri().getScheme()).isEqualTo("http");
         assertThat(realtime.getUri().toString()).isEqualTo(REALTIME_UPSTREAM.baseUrl());
         assertThat(realtime.getPredicates())
@@ -48,8 +45,6 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
     void onlyRequestResponseRoutesCarryTheCircuitBreaker() {
         List<RouteDefinition> allRoutes = routes();
 
-        // The realtime route is a long-lived socket: its handshake commits the response, which the
-        // generic forward:/fallback cannot rewrite, so it must not go through the circuit breaker.
         assertThat(filterNames(realtimeRoute())).containsExactly("RequestRateLimiter");
 
         assertThat(allRoutes)
