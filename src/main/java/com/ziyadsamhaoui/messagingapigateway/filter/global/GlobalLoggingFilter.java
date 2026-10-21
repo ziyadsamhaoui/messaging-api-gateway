@@ -19,22 +19,11 @@ import com.ziyadsamhaoui.messagingapigateway.exception.GatewayErrorWriter;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 
-/**
- * Correlated access logging for every request that survives the edge security gates.
- *
- * <p>Runs after {@code InternalPathBlockFilter} and {@code InternalHeaderStripFilter} (so blocked
- * traffic is logged by those filters instead) and wraps the whole downstream chain, which means the
- * logged duration includes rate limiting, circuit breaking and the upstream round trip.
- *
- * <p>Access tokens and the {@code X-Internal-Token} header are never logged.
- */
 @Component
 public class GlobalLoggingFilter implements GlobalFilter, Ordered {
 
-    /** Correlation id shared by the gateway, the client and downstream services. */
     public static final String CORRELATION_HEADER = "X-Correlation-Id";
 
-    /** Accepted shape for a client-supplied correlation id: short, no control characters. */
     private static final Pattern CORRELATION_ID_PATTERN = Pattern.compile("[A-Za-z0-9._:-]{1,64}");
 
     private static final Logger log = LoggerFactory.getLogger(GlobalLoggingFilter.class);

@@ -17,11 +17,6 @@ import reactor.core.publisher.Mono;
 
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Single place where the gateway turns a failure into the canonical {@link ErrorResponse} body.
- * Used by the security filters (401/403), the exception handler and the circuit breaker fallback so
- * every error leaving the edge has an identical shape.
- */
 @Component
 public class GatewayErrorWriter {
 
@@ -63,9 +58,6 @@ public class GatewayErrorWriter {
         }
     }
 
-    /**
-     * @return the request path, stripped of CR/LF and truncated, so it is safe to log and serialize
-     */
     public static String requestPath(ServerWebExchange exchange) {
         String path = exchange.getRequest().getPath().value();
         StringBuilder sanitized = new StringBuilder(Math.min(path.length(), MAX_PATH_LENGTH));
@@ -78,9 +70,6 @@ public class GatewayErrorWriter {
         return sanitized.toString();
     }
 
-    /**
-     * @return the client address, used for logging and rate-limit keys
-     */
     public static String clientAddress(ServerWebExchange exchange) {
         var remote = exchange.getRequest().getRemoteAddress();
         return (remote != null) ? remote.getAddress().getHostAddress() : "unknown";

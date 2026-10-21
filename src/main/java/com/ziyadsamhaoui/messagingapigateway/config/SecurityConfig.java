@@ -70,7 +70,6 @@ public class SecurityConfig {
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                // The gateway is a stateless bearer-token edge: no browser session, no form login.
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .cors(ServerHttpSecurity.CorsSpec::disable)

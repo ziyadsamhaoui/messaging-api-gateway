@@ -6,17 +6,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-/**
- * Strict CORS policy for the browser-facing edge.
- *
- * <p>Only explicitly configured origins are allowed (never {@code *} together with credentials), and
- * the rate-limit headers are exposed so single-page clients can implement back-off. The filter runs as
- * a WebFilter on the Netty pipeline, which means a preflight {@code OPTIONS} is answered at the edge
- * without ever reaching Spring Security or an upstream service.
- *
- * <p>The internal token header is deliberately <em>not</em> an allowed request header: browser clients
- * can never send service-to-service credentials.
- */
 @Configuration
 public class CorsConfig {
 

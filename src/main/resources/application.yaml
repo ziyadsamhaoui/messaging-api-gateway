@@ -26,8 +26,6 @@ spring:
             response-timeout: 3s
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
-            # Retry strictly idempotent reads like: 'methods: GET'
-            # keeps non-idempotent like: 'methods: POST' out of the retry path, and 429 is not retried either.
             - name: Retry
               args:
                 retries: 1
@@ -38,13 +36,7 @@ spring:
                   maxBackoff: 500ms
                   factor: 2
                   basedOnPreviousValue: false
-          # CircuitBreaker is deliberately attached per request/response route below instead of as a
-          # default filter. A WebSocket/SockJS connection commits its response during the handshake,
-          # and the generic 'forward:/fallback' resets the status on a response that cannot be rewritten
-          # (UnsupportedOperationException). The realtime-ws route therefore opts out of it; a dead
-          # realtime upstream still surfaces as the canonical 503 from GatewayExceptionHandler.
           routes:
-            # Public auth surface
             - id: auth-public
               uri: ${UPSTREAM_AUTH_SERVICE:http://localhost:8081}
               predicates:
@@ -73,7 +65,6 @@ spring:
                   args:
                     name: backendCircuitBreaker
                     fallbackUri: forward:/fallback
-            # Authenticated auth surface
             - id: auth-authenticated
               uri: ${UPSTREAM_AUTH_SERVICE:http://localhost:8081}
               predicates:
@@ -88,7 +79,6 @@ spring:
                   args:
                     name: backendCircuitBreaker
                     fallbackUri: forward:/fallback
-            # User service
             - id: user-service
               uri: ${UPSTREAM_USER_SERVICE:http://localhost:8082}
               predicates:
@@ -103,7 +93,6 @@ spring:
                   args:
                     name: backendCircuitBreaker
                     fallbackUri: forward:/fallback
-            # Chat service: reads first, then message send, then remaining writes
             - id: chat-service-reads
               uri: ${UPSTREAM_CHAT_SERVICE:http://localhost:8083}
               predicates:
@@ -172,7 +161,6 @@ spring:
                     key-resolver: "#{@userKeyResolver}"
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 3
-            # Notification service
             - id: notification-service
               uri: ${UPSTREAM_NOTIFICATION_SERVICE:http://localhost:8085}
               predicates:
@@ -228,7 +216,6 @@ info:
 badrlink:
   gateway:
     security:
-      # Paths served without an access token. Everything else requires a valid JWT.
       public-paths:
         - /auth/register
         - /auth/login

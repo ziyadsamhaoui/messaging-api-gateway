@@ -13,14 +13,6 @@ import com.ziyadsamhaoui.messagingapigateway.exception.GatewayErrorWriter;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Strips the internal service-to-service credential ({@code X-Internal-Token}, configurable) from
- * every inbound client request before routing.
- *
- * <p>Without this, any client could set the header themselves and impersonate another service once
- * the request reaches a downstream service. The gateway never injects the header itself: internal
- * calls do not traverse the public edge.
- */
 @Component
 public class InternalHeaderStripFilter implements GlobalFilter, Ordered {
 
@@ -40,7 +32,6 @@ public class InternalHeaderStripFilter implements GlobalFilter, Ordered {
         log.warn("Stripped client-supplied {} header on {} {} from {}", this.internalTokenHeader,
                 exchange.getRequest().getMethod(), GatewayErrorWriter.requestPath(exchange),
                 GatewayErrorWriter.clientAddress(exchange));
-        // The header value is never logged: it is a credential.
         ServerWebExchange sanitized = exchange.mutate()
                 .request(request -> request.headers(headers -> headers.remove(this.internalTokenHeader)))
                 .build();

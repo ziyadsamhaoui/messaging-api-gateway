@@ -18,13 +18,6 @@ import com.ziyadsamhaoui.messagingapigateway.filter.global.GlobalLoggingFilter;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Terminal handler for the circuit breaker's {@code fallbackUri: forward:/fallback}.
- *
- * <p>When an upstream is timing out, failing, or its circuit is open, the client gets a truthful
- * {@code 503} with the standard error body (and the correlation id) instead of a hanging connection or
- * a Netty stack trace. Exposed publicly on purpose: it tells the caller nothing about internals.
- */
 @RestController
 public class FallbackController {
 
@@ -41,9 +34,6 @@ public class FallbackController {
         return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body));
     }
 
-    /**
-     * @return the client-facing path that was being routed, before the fallback forward happened
-     */
     private String originalPath(ServerWebExchange exchange) {
         Set<URI> originalUris = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ORIGINAL_REQUEST_URL_ATTR);
         if (originalUris != null && !originalUris.isEmpty()) {

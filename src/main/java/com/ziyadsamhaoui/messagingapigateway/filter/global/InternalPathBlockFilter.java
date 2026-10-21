@@ -17,13 +17,6 @@ import com.ziyadsamhaoui.messagingapigateway.exception.GatewayErrorWriter;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Hard block for service-to-service endpoints ({@code /internal/**}) at the public edge.
- *
- * <p>Defense in depth: even if a route were mistakenly added for an internal path, or a downstream
- * service accepted the request, the request never leaves the gateway. The response is a plain
- * {@code 404} identical to an unknown route so the gateway does not confirm that the path exists.
- */
 @Component
 public class InternalPathBlockFilter implements GlobalFilter, Ordered {
 
@@ -59,7 +52,6 @@ public class InternalPathBlockFilter implements GlobalFilter, Ordered {
         if (candidate.contains(this.blockedSegment)) {
             return true;
         }
-        // Also reject when the reserved segment is the trailing element, e.g. "/users/internal".
         return candidate.endsWith(this.blockedSegment.substring(0, this.blockedSegment.length() - 1));
     }
 

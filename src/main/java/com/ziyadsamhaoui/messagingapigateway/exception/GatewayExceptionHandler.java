@@ -14,24 +14,12 @@ import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Replaces the default Spring Boot error handler so that everything thrown inside the reactive
- * gateway pipeline (routing, rate limiting, circuit breaking, upstream transport) leaves the edge as
- * a canonical {@link com.ziyadsamhaoui.messagingapigateway.dto.ErrorResponse}.
- *
- * <p>Ordered before {@code DefaultErrorWebExceptionHandler} (-1) so it always wins.
- */
 @Order(-2)
 @Component
 public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GatewayExceptionHandler.class);
 
-    /**
-     * Upstream transport failures reach the reactive pipeline as several different Netty/WebClient
-     * types depending on the HTTP client in use. Classifying them by simple name keeps the gateway
-     * decoupled from that implementation detail while still reporting a truthful 503.
-     */
     private static final Set<String> UPSTREAM_FAILURE_TYPES = Set.of(
             "ConnectException", "ConnectTimeoutException", "AnnotatedConnectException",
             "ReadTimeoutException", "WriteTimeoutException", "TimeoutException",
