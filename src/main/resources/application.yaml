@@ -68,7 +68,7 @@ spring:
             - id: auth-authenticated
               uri: ${UPSTREAM_AUTH_SERVICE:http://localhost:8081}
               predicates:
-                - Path=/auth/logout
+                - Path=/auth/logout,/auth/me
               filters:
                 - name: RequestRateLimiter
                   args:
@@ -226,6 +226,7 @@ badrlink:
         - /actuator/health
         - /actuator/health/**
         - /fallback
+        - /users/*/avatar
       internal-path-segment: internal
       internal-token-header: X-Internal-Token
       jwt:
