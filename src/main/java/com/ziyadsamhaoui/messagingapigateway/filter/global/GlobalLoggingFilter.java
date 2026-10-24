@@ -1,8 +1,6 @@
 package com.ziyadsamhaoui.messagingapigateway.filter.global;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +14,8 @@ import org.springframework.web.server.ServerWebExchange;
 
 import com.ziyadsamhaoui.messagingapigateway.exception.GatewayErrorWriter;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 
@@ -23,8 +23,6 @@ import reactor.core.publisher.SignalType;
 public class GlobalLoggingFilter implements GlobalFilter, Ordered {
 
     public static final String CORRELATION_HEADER = "X-Correlation-Id";
-
-    private static final Pattern CORRELATION_ID_PATTERN = Pattern.compile("[A-Za-z0-9._:-]{1,64}");
 
     private static final Logger log = LoggerFactory.getLogger(GlobalLoggingFilter.class);
 
@@ -56,12 +54,17 @@ public class GlobalLoggingFilter implements GlobalFilter, Ordered {
         });
     }
 
+    /**
+     * The trace id of the inbound request is the correlation id: the agent creates the server
+     * span before the gateway filter chain runs, and automatic Reactor context propagation keeps
+     * that span current here. Downstream services then receive the same value through the header
+     * while the W3C traceparent keeps them on the same trace.
+     */
     private String resolveCorrelationId(ServerWebExchange exchange) {
         String supplied = exchange.getRequest().getHeaders().getFirst(CORRELATION_HEADER);
-        if (supplied != null && CORRELATION_ID_PATTERN.matcher(supplied).matches()) {
-            return supplied;
-        }
-        return UUID.randomUUID().toString();
+        SpanContext spanContext = Span.current().getSpanContext();
+        String traceId = spanContext.isValid() ? spanContext.getTraceId() : null;
+        return CorrelationIdResolver.resolve(supplied, traceId);
     }
 
     @Override
