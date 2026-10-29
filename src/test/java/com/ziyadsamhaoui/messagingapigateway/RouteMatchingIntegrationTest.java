@@ -26,8 +26,8 @@ class RouteMatchingIntegrationTest extends AbstractGatewayIntegrationTest {
     void routeTableContainsExactlyTheDocumentedRoutes() {
         assertThat(routes()).extracting(RouteDefinition::getId)
                 .containsExactly("auth-public", "auth-refresh", "auth-authenticated", "user-service",
-                        "chat-service-reads", "chat-service-message-send", "chat-service-writes", "realtime-ws",
-                        "notification-service");
+                        "chat-service-reads", "chat-service-message-send", "chat-service-writes",
+                        "attachment-service", "realtime-ws", "notification-service");
     }
 
     @Test
