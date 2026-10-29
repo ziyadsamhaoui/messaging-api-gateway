@@ -197,9 +197,6 @@ resilience4j:
         timeoutDuration: 3s
         cancelRunningFuture: true
 
-# Actuator is served on its own port. Prometheus scrapes it inside the Docker network and
-# it is never published to the host, so the publicly reachable port 8080 keeps exactly the
-# routes it had before.
 management:
   server:
     port: ${MANAGEMENT_PORT:9090}
@@ -212,7 +209,6 @@ management:
       probes:
         enabled: true
       show-details: never
-      # Readiness covers Redis, which the rate limiter needs; liveness stays on readinessState.
       group:
         readiness:
           include: readinessState,redis
@@ -252,8 +248,6 @@ badrlink:
       exposed-headers: X-RateLimit-Remaining,X-RateLimit-Burst-Capacity,X-RateLimit-Replenish-Rate,X-RateLimit-Requested-Tokens,X-Correlation-Id
       max-age: 3600s
 
-# Structured JSON logs. The agent supplies trace_id/span_id through the MDC; the filter
-# adds the correlation id to every request-scoped message.
 logging:
   structured:
     format:

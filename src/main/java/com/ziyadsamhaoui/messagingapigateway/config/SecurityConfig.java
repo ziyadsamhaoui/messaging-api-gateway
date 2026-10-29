@@ -75,8 +75,6 @@ public class SecurityConfig {
                 .cors(ServerHttpSecurity.CorsSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
-                        // Actuator runs on its own unpublished management port; allowing the
-                        // probe and scrape endpoints there does not open anything on :8080.
                         .pathMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus",
                                 "/actuator/info")
                         .permitAll()

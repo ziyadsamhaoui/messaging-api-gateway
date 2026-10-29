@@ -10,15 +10,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Decorates the Redis rate limiter with a rejection counter.
- *
- * <p>Spring Cloud Gateway applies the limiter inside a filter and only surfaces the outcome as
- * a 429 response. Counting here, on the limiter itself, attributes the rejection to the route
- * that owns it and cannot confuse it with a 429 returned by an upstream service.
- *
- * <p>The delegate stays the only thing that decides; this class only observes the answer.
- */
 public class InstrumentedRateLimiter implements RateLimiter<RedisRateLimiter.Config> {
 
     static final String REJECTIONS_METRIC = "badrlink.gateway.ratelimit.rejections";

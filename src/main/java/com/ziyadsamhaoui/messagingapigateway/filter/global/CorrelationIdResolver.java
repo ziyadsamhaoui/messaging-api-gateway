@@ -3,15 +3,6 @@ package com.ziyadsamhaoui.messagingapigateway.filter.global;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/**
- * Chooses the single identifier the edge returns to callers and forwards downstream.
- *
- * <p>The value is the OpenTelemetry trace id of the inbound request whenever a trace exists,
- * so a support ticket, an error body, a log line and a Jaeger trace all carry the same string.
- * A client-supplied header is only used when there is no trace at all (the agent is not
- * attached, for example a local run without instrumentation), and a random UUID is the last
- * resort so the response contract always has a value.
- */
 final class CorrelationIdResolver {
 
     private static final Pattern CORRELATION_ID_PATTERN = Pattern.compile("[A-Za-z0-9._:-]{1,64}");

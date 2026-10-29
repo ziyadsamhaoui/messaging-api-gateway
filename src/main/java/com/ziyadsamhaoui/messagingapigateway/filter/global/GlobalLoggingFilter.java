@@ -54,12 +54,6 @@ public class GlobalLoggingFilter implements GlobalFilter, Ordered {
         });
     }
 
-    /**
-     * The trace id of the inbound request is the correlation id: the agent creates the server
-     * span before the gateway filter chain runs, and automatic Reactor context propagation keeps
-     * that span current here. Downstream services then receive the same value through the header
-     * while the W3C traceparent keeps them on the same trace.
-     */
     private String resolveCorrelationId(ServerWebExchange exchange) {
         String supplied = exchange.getRequest().getHeaders().getFirst(CORRELATION_HEADER);
         SpanContext spanContext = Span.current().getSpanContext();
